@@ -268,6 +268,21 @@ a {
   width: 100%;
 }
 
+/* Avbryt-knappen. Dempet i utgangspunktet, så den ikke konkurrerer med
+   arbeidsflyten, men tydelig rød når man er borti den. */
+.knapp--fare {
+  background: transparent;
+  color: var(--tekst-svak);
+  border-color: var(--kant);
+}
+
+.knapp--fare:hover,
+.knapp--fare:focus-visible {
+  background: var(--rod-myk);
+  color: var(--rod);
+  border-color: var(--rod);
+}
+
 /* Vipps sin egen oransje, så knappen kjennes igjen som en betalingsknapp.
    Fargen er lys nok til at hvit tekst så vidt holder kontrastkravet, så den
    brukes bevisst bare på denne ene knappen. */

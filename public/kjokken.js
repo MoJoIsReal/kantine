@@ -101,6 +101,30 @@ function betalingsKnapp(ordre) {
   });
 }
 
+function avbrytKnapp(ordre) {
+  return lag('button', {
+    klasse: 'knapp knapp--liten knapp--fare',
+    type: 'button',
+    tekst: 'Avbryt',
+    onclick: (e) => {
+      // Betalte ordrer må refunderes manuelt i Vipps, så det sies tydelig her.
+      const advarsel =
+        ordre.betalingsstatus === 'betalt'
+          ? `\n\nOBS: #${ordre.hentenummer} er betalt med ${kr(ordre.total_ore)}. ` +
+            'Pengene må sendes tilbake manuelt i Vipps.'
+          : '';
+
+      if (!confirm(`Avbryte bestilling #${ordre.hentenummer} fra ${ordre.elev_navn}?${advarsel}`)) {
+        return;
+      }
+
+      handling(e.currentTarget, () =>
+        api(`/api/ansatt/ordrer/${ordre.id}/avbryt`, { metode: 'POST' }),
+      );
+    },
+  });
+}
+
 function tegnOrdre(ordre) {
   const betalt = ordre.betalingsstatus === 'betalt';
 
@@ -117,6 +141,15 @@ function tegnOrdre(ordre) {
       ? lag('div', { klasse: 'hjelpetekst', tekst: ordre.hentetid_navn })
       : null,
 
+    // Klikkbart, så den som står i luka kan ringe rett fra mobilen.
+    ordre.telefon
+      ? lag('a', {
+          klasse: 'ordre__telefon',
+          href: `tel:${ordre.telefon}`,
+          tekst: ordre.telefon,
+        })
+      : null,
+
     lag(
       'div',
       { klasse: 'mellomrom' },
@@ -130,7 +163,13 @@ function tegnOrdre(ordre) {
 
     ordre.merknad ? lag('div', { klasse: 'ordre__merknad', tekst: ordre.merknad }) : null,
 
-    lag('div', { klasse: 'ordre__bunn' }, [betalingsKnapp(ordre), statusKnapp(ordre)]),
+    lag('div', { klasse: 'ordre__bunn' }, [
+      betalingsKnapp(ordre),
+      statusKnapp(ordre),
+      // Skyves til høyre, så den ikke treffes ved et uhell i storefri.
+      lag('div', { klasse: 'ordre__fyll' }),
+      avbrytKnapp(ordre),
+    ]),
   ]);
 }
 
