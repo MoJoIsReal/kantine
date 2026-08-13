@@ -51,8 +51,17 @@ export async function hentAdminData(request, env) {
     ...meny,
     alle_kategorier: kategorier.results,
     innstillinger,
+    // Metoden avgjør hvilke API-nøkler som trengs, og hører derfor hjemme i
+    // deploy-oppsettet. Selve nummeret gjør ikke det - det ligger i
+    // innstillingene og redigeres herfra.
     betalingsmetode: env.BETALINGSMETODE ?? 'vipps_qr',
-    vippsnummer: env.VIPPSNUMMER ?? '',
+    // Sier fra i skjemaet dersom en verdi fortsatt kommer fra wrangler.jsonc.
+    fra_miljo: {
+      vippsnummer: (env.VIPPSNUMMER ?? '').trim(),
+      vipps_mottaker_navn: (env.VIPPS_MOTTAKER_NAVN ?? '').trim(),
+      betalingsreferanse: (env.BETALINGSREFERANSE ?? '').trim(),
+      vipps_lenke: (env.VIPPS_LENKE ?? '').trim(),
+    },
   });
 }
 
@@ -142,6 +151,53 @@ export async function slettKategori(request, env, { kategoriId }) {
   return json({ ok: true });
 }
 
+/**
+ * Et Vippsnummer er enten et mobilnummer (8 siffer) eller et bedriftsnummer
+ * (5-6 siffer). Vi tillater mellomrom og +47 når det tastes, men lagrer bare
+ * sifrene, slik at lenkegenereringen og visningen blir forutsigbar.
+ */
+function lesVippsnummer(verdi) {
+  const raa = rensTekst(verdi, 24);
+  if (raa === '') return '';
+
+  if (!/^\+?[\d\s]+$/.test(raa)) {
+    throw new HttpError(400, 'Vippsnummeret kan bare inneholde tall.');
+  }
+
+  let siffer = raa.replace(/\D/g, '');
+  if (siffer.startsWith('0047')) siffer = siffer.slice(4);
+  else if (siffer.length === 10 && siffer.startsWith('47')) siffer = siffer.slice(2);
+
+  if (siffer.length < 5 || siffer.length > 8) {
+    throw new HttpError(
+      400,
+      'Vippsnummeret må være 5–6 siffer (bedrift) eller 8 siffer (mobilnummer).',
+    );
+  }
+
+  return siffer;
+}
+
+/** Tom, eller en https-adresse til Vipps. */
+function lesVippsLenke(verdi) {
+  const raa = rensTekst(verdi, 300);
+  if (raa === '') return '';
+
+  let url;
+  try {
+    url = new URL(raa);
+  } catch {
+    throw new HttpError(400, 'Vipps-lenken er ikke en gyldig nettadresse.');
+  }
+
+  // Uten denne kunne feltet blitt brukt til å sende elevene hvor som helst.
+  if (url.protocol !== 'https:' || !/(^|\.)vipps\.no$/.test(url.hostname)) {
+    throw new HttpError(400, 'Vipps-lenken må være en https-adresse hos vipps.no.');
+  }
+
+  return url.toString();
+}
+
 export async function endreInnstillinger(request, env) {
   await krevInnlogging(request, env, 'admin');
   const input = await lesJson(request);
@@ -150,6 +206,13 @@ export async function endreInnstillinger(request, env) {
     apen: (v) => (v ? '1' : '0'),
     stengt_melding: (v) => rensTekst(v, 200),
     velkomsttekst: (v) => rensTekst(v, 200),
+
+    // Betalingsoppsettet styres herfra, ikke fra wrangler.jsonc. Læreren skal
+    // kunne bytte Vippsnummer uten å måtte redigere kode og deploye på nytt.
+    vippsnummer: lesVippsnummer,
+    vipps_mottaker_navn: (v) => rensTekst(v, 60),
+    betalingsreferanse: (v) => rensTekst(v, 40),
+    vipps_lenke: lesVippsLenke,
   };
 
   for (const [nokkel, omform] of Object.entries(tillatte)) {

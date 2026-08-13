@@ -34,8 +34,8 @@ describe('vipps_qr', () => {
   });
 
   it('sier fra tydelig naar Vippsnummer mangler', () => {
-    expect(() => driver.sjekkOppsett({ VIPPSNUMMER: '' })).toThrow(HttpError);
-    expect(() => driver.sjekkOppsett({})).toThrow(/Vippsnummer/);
+    expect(() => driver.sjekkOppsett({}, { vippsnummer: '' })).toThrow(HttpError);
+    expect(() => driver.sjekkOppsett({}, {})).toThrow(/Vippsnummer/);
   });
 
   it('gir eleven nummer, belop og referanse', () => {
@@ -142,5 +142,47 @@ describe('lagVippsLenke', () => {
     expect(lagVippsLenke('')).toBe(null);
     expect(lagVippsLenke('12345678')).toBe(null); // fastnummer, ikke mobil
     expect(lagVippsLenke('999999999999')).toBe(null);
+  });
+});
+
+describe('vipps_qr henter oppsettet fra innstillingene', () => {
+  const driver = velgDriver({ BETALINGSMETODE: 'vipps_qr' });
+
+  it('lar admin-innstillingen vinne over wrangler.jsonc', () => {
+    const betaling = driver.startBetaling({
+      env: { VIPPSNUMMER: '111111', VIPPS_MOTTAKER_NAVN: 'Gammelt navn' },
+      innstillinger: { vippsnummer: '93936700', vipps_mottaker_navn: 'Kantina' },
+      ordre,
+    });
+
+    expect(betaling.vippsnummer).toBe('93936700');
+    expect(betaling.mottaker_navn).toBe('Kantina');
+  });
+
+  it('faller tilbake til miljøvariabelen naar innstillingen er tom', () => {
+    // Slik at oppsett som alt har nummeret i wrangler.jsonc fortsetter å virke.
+    const betaling = driver.startBetaling({
+      env: { VIPPSNUMMER: '93936700' },
+      innstillinger: { vippsnummer: '' },
+      ordre,
+    });
+
+    expect(betaling.vippsnummer).toBe('93936700');
+  });
+
+  it('bruker referanseprefikset fra innstillingene', () => {
+    const betaling = driver.startBetaling({
+      env: {},
+      innstillinger: { vippsnummer: '93936700', betalingsreferanse: 'Kantina bestilling' },
+      ordre,
+    });
+
+    expect(betaling.referanse).toBe('Kantina bestilling 42');
+  });
+
+  it('krever Vippsnummer et av stedene', () => {
+    expect(() => driver.sjekkOppsett({}, {})).toThrow(/Vippsnummer/);
+    expect(() => driver.sjekkOppsett({}, { vippsnummer: '93936700' })).not.toThrow();
+    expect(() => driver.sjekkOppsett({ VIPPSNUMMER: '123456' }, {})).not.toThrow();
   });
 });

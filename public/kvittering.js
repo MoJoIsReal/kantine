@@ -1,4 +1,4 @@
-import { api, kr, lag, polling, visFeil } from './felles.js';
+import { api, fyll, kr, lag, polling, visFeil } from './felles.js';
 
 const el = (id) => document.getElementById(id);
 const offentligId = new URLSearchParams(location.search).get('ordre');
@@ -71,7 +71,8 @@ function tegnBetaling(ordre, betaling) {
   el('betaling-tittel').textContent = 'Slik betaler du';
 
   if (betaling?.type === 'vipps_qr') {
-    innhold.append(
+    fyll(
+      innhold,
       lag('div', { klasse: 'stablet' }, [
         lag('div', { klasse: 'tabellsum' }, [
           lag('span', { tekst: 'Send til' }),

@@ -123,4 +123,9 @@ CREATE TABLE innstillinger (
 INSERT INTO innstillinger (nokkel, verdi) VALUES
   ('apen', '1'),
   ('stengt_melding', 'Kantina er stengt akkurat nå. Velkommen tilbake i morgen!'),
-  ('velkomsttekst', 'Bestill her, betal med Vipps, og hent i luka.');
+  ('velkomsttekst', 'Bestill her, betal med Vipps, og hent i luka.'),
+  -- Betalingsoppsettet fylles inn fra /admin, ikke fra wrangler.jsonc.
+  ('vippsnummer', ''),
+  ('vipps_mottaker_navn', ''),
+  ('betalingsreferanse', 'KANTINE Ordre:'),
+  ('vipps_lenke', '');

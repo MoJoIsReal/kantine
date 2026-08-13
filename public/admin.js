@@ -1,4 +1,4 @@
-import { api, ApiFeil, kr, lag, visFeil } from './felles.js';
+import { api, ApiFeil, fyll, kr, lag, visFeil } from './felles.js';
 
 const el = (id) => document.getElementById(id);
 
@@ -54,9 +54,29 @@ function tegnVarer() {
   const beholder = el('varer');
   beholder.replaceChildren();
 
+  // En vare må høre til en kategori. Uten kategorier fører "Ny vare" bare til
+  // en dialog man ikke kan lagre, så da sier vi hva som må gjøres først.
+  const manglerKategorier = data.alle_kategorier.length === 0;
+  el('ny-vare').disabled = manglerKategorier;
+
   const alleVarer = data.kategorier.flatMap((k) =>
     k.varer.map((v) => ({ ...v, kategori_navn: k.navn })),
   );
+
+  if (manglerKategorier) {
+    beholder.append(
+      lag('div', { klasse: 'melding melding--info' }, [
+        lag('strong', { tekst: 'Lag en kategori først.' }),
+        lag('div', {
+          tekst:
+            'Varer må ligge i en kategori – for eksempel «Baguetter», «Varmmat» ' +
+            'eller «Drikke». Legg til den første nederst på siden, så kan du ' +
+            'begynne å fylle inn varer.',
+        }),
+      ]),
+    );
+    return;
+  }
 
   if (alleVarer.length === 0) {
     beholder.append(lag('div', { klasse: 'hjelpetekst', tekst: 'Ingen varer ennå.' }));
@@ -111,6 +131,13 @@ function tegnVarer() {
 }
 
 function aapneVareDialog(vare, kategoriId) {
+  // Skal ikke kunne skje - knappen er slått av - men uten kategori er dialogen
+  // en blindvei, så vi stopper den her også.
+  if (data.alle_kategorier.length === 0) {
+    visFeil('feilmelding', 'Lag en kategori før du legger inn varer.');
+    return;
+  }
+
   redigererVareId = vare?.id ?? null;
 
   el('dialog-tittel').textContent = vare ? 'Endre vare' : 'Ny vare';
@@ -241,7 +268,7 @@ async function tegnRapport() {
     ['Utestående', kr(rapport.utestaaende_ore)],
   ];
 
-  el('rapport').replaceChildren(
+  fyll(el('rapport'),
     ...rader.map(([navn, verdi]) =>
       lag('div', { klasse: 'tabellsum' }, [
         lag('span', { tekst: navn }),
@@ -264,10 +291,17 @@ async function tegnRapport() {
 
 // ---------------------------------------------------------------- betalingsinfo
 
+/** Effektiv verdi: det som står i innstillingene, ellers wrangler.jsonc. */
+function betalingsverdi(nokkel) {
+  return (data.innstillinger[nokkel] ?? '').trim() || (data.fra_miljo?.[nokkel] ?? '');
+}
+
 function tegnBetalingsinfo() {
   const erManuell = data.betalingsmetode !== 'vipps_epayment';
+  const nummer = betalingsverdi('vippsnummer');
 
-  el('betalingsinfo').replaceChildren(
+  fyll(
+    el('betalingsinfo'),
     lag('div', { klasse: 'tabellsum' }, [
       lag('span', { tekst: 'Metode' }),
       lag('strong', {
@@ -275,21 +309,50 @@ function tegnBetalingsinfo() {
       }),
     ]),
 
-    erManuell
-      ? lag('div', { klasse: 'tabellsum' }, [
-          lag('span', { tekst: 'Vippsnummer' }),
-          lag('strong', { tekst: data.vippsnummer || 'ikke satt' }),
-        ])
-      : null,
-
-    lag('div', {
-      klasse: 'hjelpetekst mellomrom',
-      tekst: erManuell
-        ? 'Elevene vippser selv, og dere huker av «Merk betalt» på kjøkkenet. ' +
-          'Endres i wrangler.jsonc – se docs/BETALING.md.'
-        : 'Vipps bekrefter betalingene automatisk. Ingen avhuking på kjøkkenet.',
-    }),
+    !erManuell
+      ? lag('div', {
+          klasse: 'hjelpetekst mellomrom',
+          tekst: 'Vipps bekrefter betalingene automatisk. Ingen avhuking på kjøkkenet.',
+        })
+      : !nummer
+        ? lag('div', {
+            klasse: 'melding melding--info mellomrom',
+            tekst:
+              'Kantina mangler Vippsnummer. Elevene får ikke bestilt før det er ' +
+              'lagt inn her.',
+          })
+        : null,
   );
+
+  // Skjemaet gjelder bare den manuelle varianten. Ved ePayment styres alt av
+  // API-nøklene, som er hemmeligheter og ikke hører hjemme i et nettskjema.
+  el('betalingsskjema').hidden = !erManuell;
+  if (!erManuell) return;
+
+  el('b-vippsnummer').value = nummer;
+  el('b-mottaker').value = betalingsverdi('vipps_mottaker_navn');
+  el('b-referanse').value = betalingsverdi('betalingsreferanse');
+
+  const lenke = nummer ? lagVippsLenke(nummer) : null;
+  el('b-vippsnummer-hjelp').textContent = !nummer
+    ? 'Mobilnummer (8 siffer) gir elevene en «Betal med Vipps»-knapp. Bedriftsnummer (5–6 siffer) gjør ikke det.'
+    : lenke
+      ? 'Mobilnummer – elevene får en «Betal med Vipps»-knapp som åpner appen med mottaker utfylt.'
+      : 'Bedriftsnummer – elevene ser nummeret, men får ingen knapp. Vipps støtter ikke lenker til bedriftsnummer.';
+
+  const prefiks = betalingsverdi('betalingsreferanse') || 'KANTINE Ordre:';
+  el('b-referanse-eksempel').textContent = `Elevene ser: «${prefiks} 42». Hentenummeret legges på automatisk.`;
+}
+
+/**
+ * Samme regel som på serveren, brukt her bare for å vise riktig hjelpetekst
+ * med en gang. Serveren er fasit.
+ */
+function lagVippsLenke(vippsnummer) {
+  let siffer = String(vippsnummer).replace(/\D/g, '');
+  if (siffer.startsWith('0047')) siffer = siffer.slice(4);
+  else if (siffer.length === 10 && siffer.startsWith('47')) siffer = siffer.slice(2);
+  return /^[49]\d{7}$/.test(siffer) ? `https://qr.vipps.no/28/2/01/031/47${siffer}?v=1` : null;
 }
 
 // ---------------------------------------------------------------- innstillinger
@@ -383,6 +446,21 @@ el('nullstill').addEventListener('click', () => {
     'Lageret er fylt opp.',
   );
 });
+
+el('lagre-betaling').addEventListener('click', () =>
+  utfor(
+    () =>
+      api('/api/admin/innstillinger', {
+        metode: 'POST',
+        kropp: {
+          vippsnummer: el('b-vippsnummer').value,
+          vipps_mottaker_navn: el('b-mottaker').value,
+          betalingsreferanse: el('b-referanse').value,
+        },
+      }),
+    'Betalingsoppsettet er lagret.',
+  ),
+);
 
 el('ny-hentetid').addEventListener('click', () => leggTilHentetidRad(null));
 el('lagre-hentetider').addEventListener('click', lagreHentetider);
