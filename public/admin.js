@@ -291,10 +291,17 @@ async function tegnRapport() {
 
 // ---------------------------------------------------------------- betalingsinfo
 
+/** Effektiv verdi: det som står i innstillingene, ellers wrangler.jsonc. */
+function betalingsverdi(nokkel) {
+  return (data.innstillinger[nokkel] ?? '').trim() || (data.fra_miljo?.[nokkel] ?? '');
+}
+
 function tegnBetalingsinfo() {
   const erManuell = data.betalingsmetode !== 'vipps_epayment';
+  const nummer = betalingsverdi('vippsnummer');
 
-  fyll(el('betalingsinfo'),
+  fyll(
+    el('betalingsinfo'),
     lag('div', { klasse: 'tabellsum' }, [
       lag('span', { tekst: 'Metode' }),
       lag('strong', {
@@ -302,21 +309,50 @@ function tegnBetalingsinfo() {
       }),
     ]),
 
-    erManuell
-      ? lag('div', { klasse: 'tabellsum' }, [
-          lag('span', { tekst: 'Vippsnummer' }),
-          lag('strong', { tekst: data.vippsnummer || 'ikke satt' }),
-        ])
-      : null,
-
-    lag('div', {
-      klasse: 'hjelpetekst mellomrom',
-      tekst: erManuell
-        ? 'Elevene vippser selv, og dere huker av «Merk betalt» på kjøkkenet. ' +
-          'Endres i wrangler.jsonc – se docs/BETALING.md.'
-        : 'Vipps bekrefter betalingene automatisk. Ingen avhuking på kjøkkenet.',
-    }),
+    !erManuell
+      ? lag('div', {
+          klasse: 'hjelpetekst mellomrom',
+          tekst: 'Vipps bekrefter betalingene automatisk. Ingen avhuking på kjøkkenet.',
+        })
+      : !nummer
+        ? lag('div', {
+            klasse: 'melding melding--info mellomrom',
+            tekst:
+              'Kantina mangler Vippsnummer. Elevene får ikke bestilt før det er ' +
+              'lagt inn her.',
+          })
+        : null,
   );
+
+  // Skjemaet gjelder bare den manuelle varianten. Ved ePayment styres alt av
+  // API-nøklene, som er hemmeligheter og ikke hører hjemme i et nettskjema.
+  el('betalingsskjema').hidden = !erManuell;
+  if (!erManuell) return;
+
+  el('b-vippsnummer').value = nummer;
+  el('b-mottaker').value = betalingsverdi('vipps_mottaker_navn');
+  el('b-referanse').value = betalingsverdi('betalingsreferanse');
+
+  const lenke = nummer ? lagVippsLenke(nummer) : null;
+  el('b-vippsnummer-hjelp').textContent = !nummer
+    ? 'Mobilnummer (8 siffer) gir elevene en «Betal med Vipps»-knapp. Bedriftsnummer (5–6 siffer) gjør ikke det.'
+    : lenke
+      ? 'Mobilnummer – elevene får en «Betal med Vipps»-knapp som åpner appen med mottaker utfylt.'
+      : 'Bedriftsnummer – elevene ser nummeret, men får ingen knapp. Vipps støtter ikke lenker til bedriftsnummer.';
+
+  const prefiks = betalingsverdi('betalingsreferanse') || 'KANTINE Ordre:';
+  el('b-referanse-eksempel').textContent = `Elevene ser: «${prefiks} 42». Hentenummeret legges på automatisk.`;
+}
+
+/**
+ * Samme regel som på serveren, brukt her bare for å vise riktig hjelpetekst
+ * med en gang. Serveren er fasit.
+ */
+function lagVippsLenke(vippsnummer) {
+  let siffer = String(vippsnummer).replace(/\D/g, '');
+  if (siffer.startsWith('0047')) siffer = siffer.slice(4);
+  else if (siffer.length === 10 && siffer.startsWith('47')) siffer = siffer.slice(2);
+  return /^[49]\d{7}$/.test(siffer) ? `https://qr.vipps.no/28/2/01/031/47${siffer}?v=1` : null;
 }
 
 // ---------------------------------------------------------------- innstillinger
@@ -410,6 +446,21 @@ el('nullstill').addEventListener('click', () => {
     'Lageret er fylt opp.',
   );
 });
+
+el('lagre-betaling').addEventListener('click', () =>
+  utfor(
+    () =>
+      api('/api/admin/innstillinger', {
+        metode: 'POST',
+        kropp: {
+          vippsnummer: el('b-vippsnummer').value,
+          vipps_mottaker_navn: el('b-mottaker').value,
+          betalingsreferanse: el('b-referanse').value,
+        },
+      }),
+    'Betalingsoppsettet er lagret.',
+  ),
+);
 
 el('ny-hentetid').addEventListener('click', () => leggTilHentetidRad(null));
 el('lagre-hentetider').addEventListener('click', lagreHentetider);

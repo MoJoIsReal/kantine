@@ -41,10 +41,11 @@ export async function hentMenySide(request, env) {
 export async function lagOrdre(request, env) {
   const input = await lesJson(request);
   const driver = velgDriver(env);
+  const innstillinger = await hentInnstillinger(env);
 
-  // Sjekkes for ordren lagres. Ellers ville et halvferdig betalingsoppsett
+  // Sjekkes før ordren lagres. Ellers ville et halvferdig betalingsoppsett
   // fylt databasen med ordrer ingen kan betale for.
-  driver.sjekkOppsett(env);
+  driver.sjekkOppsett(env, innstillinger);
 
   const ordre = await opprettOrdre(env, input);
 
@@ -53,6 +54,7 @@ export async function lagOrdre(request, env) {
     betaling = await driver.startBetaling({
       env,
       ordre,
+      innstillinger,
       opprinnelse: new URL(request.url).origin,
     });
   } catch (feil) {
@@ -101,6 +103,7 @@ export async function hentBetalingsinfo(request, env, { offentligId }) {
   const betaling = await driver.startBetaling({
     env,
     ordre,
+    innstillinger: await hentInnstillinger(env),
     opprinnelse: new URL(request.url).origin,
   });
 

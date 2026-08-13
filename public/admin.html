@@ -179,6 +179,38 @@
         <section class="kort">
           <h2>Betaling</h2>
           <div id="betalingsinfo" class="mellomrom"></div>
+
+          <div id="betalingsskjema" hidden>
+            <div class="felt mellomrom">
+              <label for="b-vippsnummer">Vippsnummer</label>
+              <input
+                id="b-vippsnummer"
+                type="text"
+                inputmode="numeric"
+                maxlength="24"
+                placeholder="F.eks. 93936700"
+              />
+              <div class="hjelpetekst" id="b-vippsnummer-hjelp"></div>
+            </div>
+
+            <div class="felt">
+              <label for="b-mottaker">Navn på mottaker</label>
+              <input id="b-mottaker" type="text" maxlength="60" placeholder="F.eks. Kantina" />
+              <div class="hjelpetekst">
+                Vises ved siden av nummeret, så elevene ser at de sender til riktig sted.
+              </div>
+            </div>
+
+            <div class="felt">
+              <label for="b-referanse">Tekst elevene skriver i Vipps</label>
+              <input id="b-referanse" type="text" maxlength="40" placeholder="KANTINE Ordre:" />
+              <div class="hjelpetekst" id="b-referanse-eksempel"></div>
+            </div>
+
+            <button class="knapp mellomrom" id="lagre-betaling" type="button">
+              Lagre betalingsoppsett
+            </button>
+          </div>
         </section>
       </div>
     </main>

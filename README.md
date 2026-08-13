@@ -79,17 +79,17 @@ I `wrangler.jsonc`:
 
 ```jsonc
 "vars": {
-  "KANTINE_NAVN": "Kantina på Bjørnsletta",
-  "BETALINGSMETODE": "vipps_qr",
-  "VIPPSNUMMER": "93936700",
-  "VIPPS_MOTTAKER_NAVN": "Kantina",
-  "BETALINGSREFERANSE": "KANTINE Ordre:"
+  "KANTINE_NAVN": "Kantina på Bjørnsletta"
 }
 ```
 
-Er `VIPPSNUMMER` et vanlig mobilnummer, får elevene en «Betal med Vipps»-knapp
-som åpner appen med mottakeren ferdig utfylt. Beløpet må de taste selv – det
-kan ikke forhåndsutfylles. Se [docs/BETALING.md](docs/BETALING.md).
+**Vippsnummeret settes ikke her.** Det legges inn fra `/admin` under Betaling,
+sammen med mottakernavn og teksten elevene skriver i meldingsfeltet. Da slipper
+læreren å redigere kode og vente på en ny deploy for å bytte nummer.
+
+Er nummeret et vanlig mobilnummer, får elevene en «Betal med Vipps»-knapp som
+åpner appen med mottakeren ferdig utfylt. Beløpet må de taste selv – det kan
+ikke forhåndsutfylles. Se [docs/BETALING.md](docs/BETALING.md).
 
 ### 4. Publiser
 

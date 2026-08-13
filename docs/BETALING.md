@@ -73,8 +73,8 @@ i klartekst:
 https://qr.vipps.no/28/2/01/031/4793936700?v=1
 ```
 
-Lenken lages automatisk fra `VIPPSNUMMER` – dere trenger ikke sette den opp
-selv. Vil dere overstyre med en adresse fra Vippsportalen, finnes `VIPPS_LENKE`.
+Lenken lages automatisk fra Vippsnummeret dere legger inn under **Betaling**
+på `/admin` – dere trenger ikke sette den opp selv.
 
 **Beløpet kan ikke fylles ut på forhånd.** Det finnes ingen støttet måte å
 legge beløp inn i en slik lenke; `vipps://` er kun app-veksling for betalinger
@@ -95,6 +95,18 @@ To forbehold verdt å kjenne til:
   telefonnummer i klartekst. Skjer det, slutter lenken å virke, og da må dere
   over på ePayment-API-et. Referansen og nummeret på siden fungerer uansett.
 
+### Hvor betalingsoppsettet bor
+
+| Innstilling | Settes | Hvorfor |
+| --- | --- | --- |
+| Vippsnummer, mottakernavn, referansetekst | `/admin` → Betaling | Driftsdetaljer læreren må kunne endre selv, uten deploy |
+| `BETALINGSMETODE` | `wrangler.jsonc` | Avgjør hvilke API-nøkler systemet trenger |
+| Vipps-nøkler (ved ePayment) | `wrangler secret put` | Ekte hemmeligheter, skal aldri i git eller i et nettskjema |
+
+Har dere et eldre oppsett med `VIPPSNUMMER` i `wrangler.jsonc`, virker det
+fortsatt – verdien i `/admin` vinner når den er fylt ut, ellers brukes den fra
+miljøet.
+
 ### Referansen elevene limer inn
 
 Meldingsfeltet er det eneste som knytter innbetalingen til bestillingen, så
@@ -104,8 +116,8 @@ den har fått egen boks med kopiknapp:
 KANTINE Ordre: 42
 ```
 
-Prefikset settes med `BETALINGSREFERANSE` i `wrangler.jsonc`. Hentenummeret
-legges på automatisk.
+Prefikset settes under **Betaling** på `/admin`. Hentenummeret legges på
+automatisk.
 
 ### Praktiske råd for den manuelle varianten
 

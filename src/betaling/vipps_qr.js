@@ -21,14 +21,24 @@ export const krevManuellBekreftelse = true;
 const STANDARD_REFERANSE = 'KANTINE Ordre:';
 
 /**
- * Kalles for ordren lagres, slik at en feil i oppsettet ikke etterlater en
+ * Henter en verdi som admin kan styre fra dashbordet, med miljøvariabelen som
+ * reserve. Slik slipper læreren å redigere wrangler.jsonc og vente på en
+ * deploy for å bytte telefonnummer, samtidig som eldre oppsett som har satt
+ * verdien i miljøet fortsatt virker.
+ */
+function verdi(innstillinger, env, nokkel, miljonavn) {
+  return String(innstillinger?.[nokkel] ?? '').trim() || String(env?.[miljonavn] ?? '').trim();
+}
+
+/**
+ * Kalles før ordren lagres, slik at en feil i oppsettet ikke etterlater en
  * ordre ingen kan betale.
  */
-export function sjekkOppsett(env) {
-  if (!(env.VIPPSNUMMER ?? '').trim()) {
+export function sjekkOppsett(env, innstillinger) {
+  if (!verdi(innstillinger, env, 'vippsnummer', 'VIPPSNUMMER')) {
     throw new HttpError(
       503,
-      'Kantina mangler Vippsnummer i oppsettet. Si fra til den som drifter systemet.',
+      'Kantina mangler Vippsnummer. Læreren kan legge det inn under Betaling på /admin.',
     );
   }
 }
@@ -37,8 +47,10 @@ export function sjekkOppsett(env) {
  * Teksten eleven skal lime inn i meldingsfeltet i Vipps, f.eks.
  * "KANTINE Ordre: 42". Prefikset kan endres med BETALINGSREFERANSE.
  */
-export function lagReferanse(env, ordre) {
-  const prefiks = rensTekst(env.BETALINGSREFERANSE, 40) || STANDARD_REFERANSE;
+export function lagReferanse(env, ordre, innstillinger) {
+  const prefiks =
+    rensTekst(verdi(innstillinger, env, 'betalingsreferanse', 'BETALINGSREFERANSE'), 40) ||
+    STANDARD_REFERANSE;
   return `${prefiks} ${ordre.hentenummer}`;
 }
 
@@ -72,16 +84,20 @@ export function lagVippsLenke(vippsnummer) {
   return `https://qr.vipps.no/28/2/01/031/47${nasjonalt}?v=1`;
 }
 
-export function startBetaling({ env, ordre }) {
-  sjekkOppsett(env);
+export function startBetaling({ env, ordre, innstillinger }) {
+  sjekkOppsett(env, innstillinger);
 
-  const vippsnummer = env.VIPPSNUMMER.trim();
-  const mottakerNavn = rensTekst(env.VIPPS_MOTTAKER_NAVN, 60);
-  const referanse = lagReferanse(env, ordre);
+  const vippsnummer = verdi(innstillinger, env, 'vippsnummer', 'VIPPSNUMMER');
+  const mottakerNavn = rensTekst(
+    verdi(innstillinger, env, 'vipps_mottaker_navn', 'VIPPS_MOTTAKER_NAVN'),
+    60,
+  );
+  const referanse = lagReferanse(env, ordre, innstillinger);
 
-  // VIPPS_LENKE lar dere overstyre med en adresse dere har hentet fra
-  // Vippsportalen. Er den tom, lages lenken fra nummeret.
-  const lenke = (env.VIPPS_LENKE ?? '').trim() || lagVippsLenke(vippsnummer);
+  // Overstyring med en adresse hentet fra Vippsportalen. Er den tom, lages
+  // lenken fra nummeret.
+  const lenke =
+    verdi(innstillinger, env, 'vipps_lenke', 'VIPPS_LENKE') || lagVippsLenke(vippsnummer);
 
   return {
     type: 'vipps_qr',
