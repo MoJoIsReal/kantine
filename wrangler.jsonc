@@ -1,0 +1,61 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kantine",
+  "main": "src/index.js",
+  "compatibility_date": "2025-04-01",
+
+  // Statiske filer serveres direkte fra Cloudflare sitt nett (gratis, teller ikke
+  // mot Worker-forespørslene). Alt som ikke matcher en fil i ./public havner i
+  // Worker-en, dvs. /api/*.
+  "assets": {
+    "directory": "./public"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kantine",
+      // Bytt ut med IDen du får av: npx wrangler d1 create kantine
+      "database_id": "REPLACE_ME"
+    }
+  ],
+
+  "vars": {
+    // Vises i toppen av menyen og på kvitteringen.
+    "KANTINE_NAVN": "Kantina",
+
+    // Betalingsmetode: "vipps_qr" (gratis, ingen API-avtale) eller "vipps_epayment".
+    // Se docs/BETALING.md for hva forskjellen betyr i praksis.
+    "BETALINGSMETODE": "vipps_qr",
+
+    // Brukes kun når BETALINGSMETODE = "vipps_qr". Vippsnummeret elevene betaler til.
+    "VIPPSNUMMER": "",
+
+    // Valgfritt: navnet som vises ved siden av nummeret, så elevene ser at de
+    // sender til riktig mottaker. F.eks. "Kantina" eller "Ola Nordmann".
+    "VIPPS_MOTTAKER_NAVN": "",
+
+    // Teksten eleven limer inn i meldingsfeltet i Vipps. Hentenummeret legges
+    // til bakerst, så dette gir "KANTINE Ordre: 42".
+    "BETALINGSREFERANSE": "KANTINE Ordre:",
+
+    // Valgfritt: adressen kantinas egen Vipps-QR peker til. Settes den, får
+    // elevene en "Betal med Vipps"-knapp i stedet for bare et nummer.
+    // Se docs/BETALING.md for hvordan dere finner den - og les avsnittet om
+    // hvorfor den ikke kan fylle ut beløpet.
+    "VIPPS_LENKE": "",
+
+    // Brukes kun når BETALINGSMETODE = "vipps_epayment".
+    // "test" mot Vipps sitt testmiljo (MT), "produksjon" mot ekte penger.
+    "VIPPS_MILJO": "test"
+  }
+
+  // Hemmeligheter settes med `npx wrangler secret put <NAVN>`, ikke her:
+  //   ANSATT_PIN         - PIN for kjøkken-dashboardet (paakrevd)
+  //   ADMIN_PIN          - PIN for admin/meny (paakrevd)
+  //   VIPPS_CLIENT_ID    - kun ved vipps_epayment
+  //   VIPPS_CLIENT_SECRET
+  //   VIPPS_SUBSCRIPTION_KEY
+  //   VIPPS_MSN
+  //   VIPPS_WEBHOOK_SECRET - settes automatisk av `npm run vipps:webhook`
+}

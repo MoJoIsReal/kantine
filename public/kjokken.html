@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#b3491e" />
+    <title>Kjøkken</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .kolonner {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 780px) {
+        .kolonner {
+          grid-template-columns: repeat(3, 1fr);
+          align-items: start;
+        }
+      }
+
+      .kolonne__topp {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 0 2px;
+      }
+
+      .kolonne__antall {
+        color: var(--tekst-svak);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ordre {
+        background: var(--flate);
+        border: 1px solid var(--kant);
+        border-left: 4px solid var(--kant);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        box-shadow: var(--skygge);
+      }
+
+      .ordre--ubetalt {
+        border-left-color: var(--gul);
+      }
+      .ordre--betalt {
+        border-left-color: var(--gronn);
+      }
+
+      .ordre__topp {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .ordre__nummer {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+
+      .ordre__navn {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ordre__linje {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 2px 0;
+      }
+
+      .ordre__antall {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ordre__merknad {
+        background: var(--gul-myk);
+        color: var(--gul);
+        border-radius: 8px;
+        padding: 6px 9px;
+        margin-top: 8px;
+        font-size: 0.9rem;
+      }
+
+      .ordre__bunn {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .innlogging {
+        max-width: 340px;
+        margin: 60px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topp" id="topp" hidden>
+      <div class="topp__rad">
+        <div>
+          <h1 id="tittel">Kjøkken</h1>
+          <div class="topp__undertekst" id="oppsummering"></div>
+        </div>
+        <div class="rad">
+          <a class="knapp knapp--sekundaer knapp--liten" href="/admin">Admin</a>
+          <button class="knapp knapp--sekundaer knapp--liten" id="logg-ut" type="button">
+            Logg ut
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="innhold innhold--bred">
+      <div class="melding melding--feil" id="feilmelding" hidden role="alert"></div>
+
+      <!-- Innlogging -->
+      <section class="kort innlogging" id="innlogging" hidden>
+        <h2>Logg inn</h2>
+        <div class="felt mellomrom">
+          <label for="pin">PIN</label>
+          <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" />
+        </div>
+        <button class="knapp knapp--bred mellomrom" id="logg-inn" type="button">Logg inn</button>
+      </section>
+
+      <div id="laster" class="tom puls">Laster …</div>
+
+      <!-- Ordretavle -->
+      <div id="tavle" hidden>
+        <div class="kolonner">
+          <section>
+            <div class="kolonne__topp">
+              <h2>Nye</h2>
+              <span class="kolonne__antall" id="antall-ny">0</span>
+            </div>
+            <div id="kolonne-ny"></div>
+          </section>
+
+          <section>
+            <div class="kolonne__topp">
+              <h2>Lages nå</h2>
+              <span class="kolonne__antall" id="antall-under_arbeid">0</span>
+            </div>
+            <div id="kolonne-under_arbeid"></div>
+          </section>
+
+          <section>
+            <div class="kolonne__topp">
+              <h2>Klare</h2>
+              <span class="kolonne__antall" id="antall-klar">0</span>
+            </div>
+            <div id="kolonne-klar"></div>
+          </section>
+        </div>
+
+        <div class="tom" id="ingen-ordrer" hidden>Ingen bestillinger ennå i dag.</div>
+      </div>
+    </main>
+
+    <script src="/kjokken.js" type="module"></script>
+  </body>
+</html>
