@@ -19,6 +19,7 @@ const RUTER = [
   ['GET', '/api/ansatt/ordrer', ansatt.hentKo],
   ['POST', '/api/ansatt/ordrer/:ordreId/status', ansatt.endreStatus],
   ['POST', '/api/ansatt/ordrer/:ordreId/betaling', ansatt.endreBetaling],
+  ['POST', '/api/ansatt/ordrer/:ordreId/avbryt', ansatt.avbryt],
   ['GET', '/api/ansatt/rapport', ansatt.hentRapport],
 
   ['GET', '/api/admin/data', admin.hentAdminData],

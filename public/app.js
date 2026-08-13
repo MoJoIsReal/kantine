@@ -15,6 +15,7 @@ function lastHusket() {
     const lagret = JSON.parse(localStorage.getItem(HUSK_NOKKEL) ?? '{}');
     if (lagret.navn) el('elev-navn').value = lagret.navn;
     if (lagret.klasse) el('klasse').value = lagret.klasse;
+    if (lagret.telefon) el('telefon').value = lagret.telefon;
   } catch {
     // Ugyldig lagret verdi er ikke verdt å bry brukeren med.
   }
@@ -24,7 +25,11 @@ function husk() {
   try {
     localStorage.setItem(
       HUSK_NOKKEL,
-      JSON.stringify({ navn: el('elev-navn').value, klasse: el('klasse').value }),
+      JSON.stringify({
+        navn: el('elev-navn').value,
+        klasse: el('klasse').value,
+        telefon: el('telefon').value,
+      }),
     );
   } catch {
     // Privat modus kan blokkere lagring. Bestillingen fungerer uansett.
@@ -205,6 +210,7 @@ async function bestill() {
       kropp: {
         elev_navn: navn,
         klasse: el('klasse').value.trim(),
+        telefon: el('telefon').value.trim(),
         merknad: el('merknad').value.trim(),
         // Tom verdi når alle fristene har gått ut - da bestilles det uten tidspunkt.
         hentetid_id: el('hentetid').hidden ? null : el('hentetid').value || null,

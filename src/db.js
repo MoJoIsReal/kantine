@@ -136,6 +136,26 @@ async function byggLinjer(env, raaLinjer) {
   return linjer;
 }
 
+/**
+ * Telefonnummeret er valgfritt. Er det fylt ut, skal det være et norsk
+ * mobilnummer - et halvt nummer er verre enn ingenting, siden kjøkkenet da
+ * tror de kan nå eleven.
+ */
+function lesTelefon(verdi) {
+  const raa = rensTekst(verdi, 24);
+  if (raa === '') return '';
+
+  let siffer = raa.replace(/\D/g, '');
+  if (siffer.startsWith('0047')) siffer = siffer.slice(4);
+  else if (siffer.length === 10 && siffer.startsWith('47')) siffer = siffer.slice(2);
+
+  if (!/^[49]\d{7}$/.test(siffer)) {
+    throw new HttpError(400, 'Telefonnummeret må være åtte siffer, eller stå tomt.');
+  }
+
+  return siffer;
+}
+
 async function finnHentetid(env, hentetidId) {
   if (hentetidId === null || hentetidId === undefined || hentetidId === '') return null;
   const rad = await env.DB.prepare('SELECT id, navn, frist FROM hentetider WHERE id = ? AND aktiv = 1')
@@ -165,6 +185,7 @@ export async function opprettOrdre(env, input) {
   }
 
   const klasse = rensTekst(input.klasse, 20);
+  const telefon = lesTelefon(input.telefon);
   const merknad = rensTekst(input.merknad, 200);
   const linjer = await byggLinjer(env, input.linjer);
   const hentetid = await finnHentetid(env, input.hentetid_id);
@@ -186,15 +207,16 @@ export async function opprettOrdre(env, input) {
     const setninger = [
       env.DB.prepare(
         `INSERT INTO ordrer
-           (dato, hentenummer, offentlig_id, elev_navn, klasse, hentetid_id, hentetid_navn,
-            merknad, total_ore, betalingsmetode)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (dato, hentenummer, offentlig_id, elev_navn, klasse, telefon, hentetid_id,
+            hentetid_navn, merknad, total_ore, betalingsmetode)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
         dato,
         hentenummer,
         offentligId,
         elevNavn,
         klasse,
+        telefon,
         hentetid?.id ?? null,
         hentetid?.navn ?? '',
         merknad,
@@ -262,7 +284,8 @@ export async function hentOrdre(env, kriterier) {
   if (!ordre) throw new HttpError(404, 'Fant ikke bestillingen.');
 
   const { results } = await env.DB.prepare(
-    'SELECT navn, emoji, pris_ore, antall FROM ordrelinjer WHERE ordre_id = ? ORDER BY id',
+    // vare_id trengs for å kunne føre varene tilbake på lageret ved avbrudd.
+    'SELECT vare_id, navn, emoji, pris_ore, antall FROM ordrelinjer WHERE ordre_id = ? ORDER BY id',
   )
     .bind(ordre.id)
     .all();
@@ -275,7 +298,7 @@ export async function hentDagensOrdrer(env, { dato = datoIOslo(), inkluderLevert
   const statusFilter = inkluderLevert ? '' : "AND status NOT IN ('levert', 'avbrutt')";
 
   const { results: ordrer } = await env.DB.prepare(
-    `SELECT id, hentenummer, elev_navn, klasse, hentetid_navn, merknad, total_ore,
+    `SELECT id, hentenummer, elev_navn, klasse, telefon, hentetid_navn, merknad, total_ore,
             status, betalingsstatus, betalingsmetode, opprettet
        FROM ordrer
       WHERE dato = ? ${statusFilter}
@@ -317,6 +340,48 @@ export async function settOrdreStatus(env, ordreId, status) {
 
   if (resultat.meta.changes === 0) throw new HttpError(404, 'Fant ikke bestillingen.');
   await loggHendelse(env, ordreId, 'status', status);
+}
+
+/**
+ * Avbryter en ordre og legger varene tilbake på lageret.
+ *
+ * Uten tilbakeføringen ville lageret krympet hver gang noen bestilte feil, og
+ * varer ville blitt stående som utsolgt uten grunn.
+ *
+ * Rekkefølgen i batchen er viktig: lagertilbakeføringen sjekker at ordren ikke
+ * alt er avbrutt, og kjøres før statusen settes. Dermed blir hele operasjonen
+ * idempotent - trykker to personer "Avbryt" samtidig, føres lageret likevel
+ * bare tilbake én gang.
+ */
+export async function avbrytOrdre(env, ordreId) {
+  const id = Number(ordreId);
+  const ordre = await hentOrdre(env, { id });
+
+  const setninger = [];
+
+  for (const linje of ordre.linjer) {
+    if (!linje.vare_id) continue;
+    setninger.push(
+      env.DB.prepare(
+        `UPDATE varer
+            SET antall_igjen = antall_igjen + ?
+          WHERE id = ?
+            AND antall_igjen IS NOT NULL
+            AND (SELECT status FROM ordrer WHERE id = ?) != 'avbrutt'`,
+      ).bind(linje.antall, linje.vare_id, id),
+    );
+  }
+
+  setninger.push(
+    env.DB.prepare(
+      "UPDATE ordrer SET status = 'avbrutt', oppdatert = datetime('now') WHERE id = ?",
+    ).bind(id),
+  );
+
+  await env.DB.batch(setninger);
+  await loggHendelse(env, id, 'avbrutt', `${ordre.linjer.length} varelinjer lagt tilbake`);
+
+  return hentOrdre(env, { id });
 }
 
 export async function settBetalingsstatus(env, ordreId, betalingsstatus, referanse = undefined) {

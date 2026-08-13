@@ -1,6 +1,7 @@
 import { krevInnlogging, lagToken, rolleForPin, settOktCookie, slettOktCookie } from '../auth.js';
 import { velgDriver } from '../betaling/index.js';
 import {
+  avbrytOrdre,
   hentDagensOrdrer,
   hentDagsrapport,
   hentOrdre,
@@ -58,6 +59,17 @@ export async function endreStatus(request, env, { ordreId }) {
   const { status } = await lesJson(request);
   await settOrdreStatus(env, ordreId, status);
   const ordre = await hentOrdre(env, { id: ordreId });
+  return json({ ordre });
+}
+
+/**
+ * Avbryter en bestilling, for eksempel når eleven har valgt feil eller ikke
+ * dukker opp. Varene føres tilbake på lageret, og ordren holdes utenfor
+ * dagsoppgjøret.
+ */
+export async function avbryt(request, env, { ordreId }) {
+  await krevInnlogging(request, env);
+  const ordre = await avbrytOrdre(env, ordreId);
   return json({ ordre });
 }
 

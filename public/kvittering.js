@@ -49,6 +49,21 @@ function tegnBetaling(ordre, betaling) {
   const innhold = el('betaling-innhold');
   innhold.replaceChildren();
 
+  // En avbrutt bestilling skal ikke be eleven om å betale.
+  if (ordre.status === 'avbrutt') {
+    el('betaling-tittel').textContent = 'Bestillingen er avbrutt';
+    innhold.append(
+      lag('div', {
+        klasse: 'melding melding--feil',
+        tekst:
+          ordre.betalingsstatus === 'betalt'
+            ? 'Kantina har avbrutt bestillingen. Har du betalt, får du pengene tilbake – snakk med dem i luka.'
+            : 'Kantina har avbrutt bestillingen. Du skal ikke betale for den.',
+      }),
+    );
+    return;
+  }
+
   if (ordre.betalingsstatus === 'betalt') {
     el('betaling-tittel').textContent = 'Betalt';
     innhold.append(

@@ -98,6 +98,9 @@ export async function hentBetalingsinfo(request, env, { offentligId }) {
   if (ordre.betalingsstatus === 'betalt') {
     throw new HttpError(409, 'Denne bestillingen er allerede betalt.');
   }
+  if (ordre.status === 'avbrutt') {
+    throw new HttpError(409, 'Denne bestillingen er avbrutt og skal ikke betales.');
+  }
 
   const driver = velgDriver(env);
   const betaling = await driver.startBetaling({

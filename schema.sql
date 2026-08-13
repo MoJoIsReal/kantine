@@ -61,6 +61,9 @@ CREATE TABLE ordrer (
   offentlig_id    TEXT    NOT NULL,
   elev_navn       TEXT    NOT NULL,
   klasse          TEXT    NOT NULL DEFAULT '',
+  -- Valgfritt. Gjør det mulig for kjokkenet å ta kontakt hvis noe er uklart,
+  -- og å kjenne igjen hvem en Vipps-innbetaling kom fra.
+  telefon         TEXT    NOT NULL DEFAULT '',
   hentetid_id     INTEGER REFERENCES hentetider(id),
   hentetid_navn   TEXT    NOT NULL DEFAULT '',
   merknad         TEXT    NOT NULL DEFAULT '',

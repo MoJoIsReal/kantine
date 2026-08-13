@@ -12,7 +12,7 @@ Bygget for å kjøre gratis på Cloudflare sitt gratisnivå.
 | ----------- | ---------------------- | ---------------------------------------------------------- |
 | `/`         | Elevene                | Meny, handlekurv og bestilling                              |
 | `/kvittering` | Eleven som bestilte  | Hentenummer, betalingsinfo og status                        |
-| `/kjokken`  | De som står i luka     | Ordretavle med Nye / Lages nå / Klare, og avhuking av betaling |
+| `/kjokken`  | De som står i luka     | Ordretavle med Nye / Lages nå / Klare, avhuking av betaling og avbryting |
 | `/admin`    | Læreren                | Meny, priser, lager, åpningstider og dagsoppgjør            |
 
 Ordretavla oppdaterer seg selv, så den kan stå på en skjerm i kantina.
@@ -139,10 +139,31 @@ npm test
 vippset, trykker dere **Merk betalt**; deretter **Start**, **Klar** og
 **Levert** etter hvert som maten blir laget og hentet.
 
+Er noe bestilt ved en feil, eller dukker ikke eleven opp, trykker dere
+**Avbryt**. Varene går tilbake på lageret, og ordren holdes utenfor
+dagsoppgjøret. Har eleven allerede betalt, sier bekreftelsen fra om at pengene
+må sendes tilbake manuelt i Vipps.
+
 **Ved stengetid** stenger læreren kantina fra `/admin` og ser dagsoppgjøret –
 omsetning, hva som ble solgt, og om noe står ubetalt.
 
 Varer som går tomt forsvinner automatisk fra menyen.
+
+## Endringer i databasen
+
+`schema.sql` beskriver hvordan databasen skal se ut, og **dropper alle
+tabellene** når den kjøres. Den skal derfor bare brukes ved førstegangsoppsett.
+
+Endres skjemaet senere, ligger endringen som en egen fil i `migrasjoner/`, som
+kjøres mot databasen som er i bruk:
+
+```bash
+npx wrangler d1 execute kantine --remote --file=./migrasjoner/001-telefon.sql
+```
+
+Kjør migreringen **før** du deployer koden som trenger den. Migreringene er
+trygge å kjøre mot en gammel database, mens ny kode mot et gammelt skjema
+feiler.
 
 ## Hvordan det er bygget
 
@@ -181,9 +202,13 @@ Noen valg som er verdt å kjenne til:
 
 ## Personvern
 
-Systemet lagrer navn, klasse og hva eleven bestilte. Det er det minste som
-trengs for å levere riktig mat til riktig person, men det er
-personopplysninger om mindreårige, og skolen er behandlingsansvarlig.
+Systemet lagrer navn, klasse, hva eleven bestilte og – hvis eleven fyller det
+ut – telefonnummer. Det er personopplysninger om mindreårige, og skolen er
+behandlingsansvarlig.
+
+Telefonnummeret er bevisst **valgfritt**. Det gjør det lettere for kantina å ta
+kontakt og å kjenne igjen hvem en Vipps-innbetaling kom fra, men ingen skal
+måtte oppgi det for å kjøpe en bolle.
 
 To ting bør avklares med skolen før dere setter i gang:
 
