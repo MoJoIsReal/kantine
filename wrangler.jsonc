@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "kantine",
       // Bytt ut med IDen du får av: npx wrangler d1 create kantine
-      "database_id": "REPLACE_ME"
+      "database_id": "d51e291d-fbac-4392-aa65-888b267040c2"
     }
   ],
 
