@@ -1,0 +1,14 @@
+node_modules/
+
+# Lokale hemmeligheter - PIN-koder og Vipps-nokler skal aldri sjekkes inn.
+.dev.vars
+.env
+
+# Wrangler sin lokale tilstand, inkludert den lokale D1-databasen.
+.wrangler/
+
+# Genereres av `npm run plakat`.
+plakat.html
+
+.DS_Store
+*.log

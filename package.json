@@ -1,0 +1,23 @@
+{
+  "name": "kantine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bestillingssystem for skolekantine - QR-meny, betaling og kjokken-dashboard",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute kantine --local --file=./schema.sql",
+    "db:seed": "wrangler d1 execute kantine --local --file=./seed.sql",
+    "db:init:remote": "wrangler d1 execute kantine --remote --file=./schema.sql",
+    "db:seed:remote": "wrangler d1 execute kantine --remote --file=./seed.sql",
+    "test": "vitest run",
+    "plakat": "node scripts/lag-plakat.mjs",
+    "typecheck": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.4",
+    "vitest": "^2.1.8",
+    "wrangler": "^4.122.0"
+  }
+}

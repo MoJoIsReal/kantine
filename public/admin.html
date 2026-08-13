@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#b3491e" />
+    <title>Admin – kantina</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .varerad {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--kant);
+      }
+
+      .varerad:last-child {
+        border-bottom: none;
+      }
+
+      .varerad__navn {
+        font-weight: 600;
+      }
+
+      .skjemarutenett {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 620px) {
+        .skjemarutenett {
+          grid-template-columns: 1fr 1fr;
+        }
+        .skjemarutenett .full {
+          grid-column: 1 / -1;
+        }
+      }
+
+      dialog {
+        border: 1px solid var(--kant);
+        border-radius: var(--radius);
+        background: var(--flate);
+        color: var(--tekst);
+        padding: 20px;
+        max-width: 560px;
+        width: calc(100vw - 32px);
+      }
+
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.45);
+      }
+
+      .innlogging {
+        max-width: 340px;
+        margin: 60px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topp" id="topp" hidden>
+      <div class="topp__rad">
+        <h1>Admin</h1>
+        <div class="rad">
+          <a class="knapp knapp--sekundaer knapp--liten" href="/kjokken">Kjøkken</a>
+          <button class="knapp knapp--sekundaer knapp--liten" id="logg-ut" type="button">
+            Logg ut
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="innhold">
+      <div class="melding melding--feil" id="feilmelding" hidden role="alert"></div>
+      <div class="melding melding--ok" id="okmelding" hidden></div>
+
+      <section class="kort innlogging" id="innlogging" hidden>
+        <h2>Logg inn</h2>
+        <p class="hjelpetekst">Krever admin-PIN.</p>
+        <div class="felt mellomrom">
+          <label for="pin">PIN</label>
+          <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" />
+        </div>
+        <button class="knapp knapp--bred mellomrom" id="logg-inn" type="button">Logg inn</button>
+      </section>
+
+      <div id="laster" class="tom puls">Laster …</div>
+
+      <div id="panel" hidden>
+        <!-- Åpen/stengt -->
+        <section class="kort">
+          <h2>Kantina</h2>
+          <div class="rad mellomrom">
+            <button class="knapp" id="apen-knapp" type="button">–</button>
+            <span class="hjelpetekst" id="apen-status"></span>
+          </div>
+
+          <div class="felt mellomrom">
+            <label for="velkomsttekst">Tekst på menysiden</label>
+            <input id="velkomsttekst" type="text" maxlength="200" />
+          </div>
+
+          <div class="felt">
+            <label for="stengt-melding">Tekst når det er stengt</label>
+            <input id="stengt-melding" type="text" maxlength="200" />
+          </div>
+
+          <button class="knapp knapp--sekundaer mellomrom" id="lagre-tekster" type="button">
+            Lagre tekster
+          </button>
+        </section>
+
+        <!-- Dagsoppgjør -->
+        <section class="kort">
+          <h2>I dag</h2>
+          <div id="rapport" class="mellomrom"></div>
+        </section>
+
+        <!-- Meny -->
+        <section class="kort">
+          <div class="rad" style="justify-content: space-between">
+            <h2>Meny</h2>
+            <button class="knapp knapp--liten" id="ny-vare" type="button">Ny vare</button>
+          </div>
+
+          <div class="mellomrom">
+            <label for="nullstill-antall">Fyll opp lageret til ny dag</label>
+            <div class="rad">
+              <input
+                id="nullstill-antall"
+                type="number"
+                min="0"
+                value="20"
+                style="width: 100px"
+              />
+              <button class="knapp knapp--sekundaer knapp--liten" id="nullstill" type="button">
+                Sett antall på alle
+              </button>
+            </div>
+            <div class="hjelpetekst">
+              Gjelder bare varer som har et antall. Varer med tomt antall er alltid tilgjengelige.
+            </div>
+          </div>
+
+          <div id="varer" class="mellomrom"></div>
+        </section>
+
+        <!-- Kategorier -->
+        <section class="kort">
+          <h2>Kategorier</h2>
+          <div id="kategorier" class="mellomrom"></div>
+          <div class="rad mellomrom">
+            <input id="ny-kategori" type="text" placeholder="Navn på ny kategori" maxlength="60" />
+            <button class="knapp knapp--sekundaer knapp--liten" id="legg-til-kategori" type="button">
+              Legg til
+            </button>
+          </div>
+        </section>
+
+        <!-- Hentetider -->
+        <section class="kort">
+          <h2>Hentetider</h2>
+          <p class="hjelpetekst">
+            Elevene velger ett av disse tidspunktene. Fristen er når bestillinger stenger.
+          </p>
+          <div id="hentetider" class="mellomrom stablet"></div>
+          <div class="rad mellomrom">
+            <button class="knapp knapp--sekundaer knapp--liten" id="ny-hentetid" type="button">
+              Legg til rad
+            </button>
+            <button class="knapp knapp--liten" id="lagre-hentetider" type="button">Lagre</button>
+          </div>
+        </section>
+
+        <!-- Betaling -->
+        <section class="kort">
+          <h2>Betaling</h2>
+          <div id="betalingsinfo" class="mellomrom"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Skjema for én vare -->
+    <dialog id="vare-dialog">
+      <h2 id="dialog-tittel">Ny vare</h2>
+      <div class="skjemarutenett mellomrom">
+        <div class="felt full">
+          <label for="v-navn">Navn</label>
+          <input id="v-navn" type="text" maxlength="80" />
+        </div>
+        <div class="felt full">
+          <label for="v-beskrivelse">Beskrivelse</label>
+          <input id="v-beskrivelse" type="text" maxlength="200" />
+        </div>
+        <div class="felt">
+          <label for="v-kategori">Kategori</label>
+          <select id="v-kategori"></select>
+        </div>
+        <div class="felt">
+          <label for="v-pris">Pris i kroner</label>
+          <input id="v-pris" type="number" min="0" step="0.5" />
+        </div>
+        <div class="felt">
+          <label for="v-antall">Antall i dag</label>
+          <input id="v-antall" type="number" min="0" placeholder="Tomt = ubegrenset" />
+        </div>
+        <div class="felt">
+          <label for="v-emoji">Emoji</label>
+          <input id="v-emoji" type="text" maxlength="8" placeholder="🥖" />
+        </div>
+      </div>
+
+      <div class="rad mellomrom" style="justify-content: flex-end">
+        <button class="knapp knapp--sekundaer" id="dialog-avbryt" type="button">Avbryt</button>
+        <button class="knapp" id="dialog-lagre" type="button">Lagre</button>
+      </div>
+    </dialog>
+
+    <script src="/admin.js" type="module"></script>
+  </body>
+</html>
