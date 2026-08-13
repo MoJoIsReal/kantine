@@ -56,6 +56,17 @@ export function lag(tag, egenskaper = {}, barn = []) {
   return el;
 }
 
+/**
+ * Tømmer et element og fyller det med barna som faktisk finnes.
+ *
+ * replaceChildren() og append() gjør null om til teksten "null" i stedet for
+ * å hoppe over den, så betingede barn må lukes bort her. lag() gjør det samme
+ * for sine egne barn.
+ */
+export function fyll(el, ...barn) {
+  el.replaceChildren(...barn.flat().filter(Boolean));
+}
+
 export function visFeil(elementId, melding) {
   const el = document.getElementById(elementId);
   if (!el) return;

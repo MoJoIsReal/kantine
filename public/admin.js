@@ -1,4 +1,4 @@
-import { api, ApiFeil, kr, lag, visFeil } from './felles.js';
+import { api, ApiFeil, fyll, kr, lag, visFeil } from './felles.js';
 
 const el = (id) => document.getElementById(id);
 
@@ -54,9 +54,29 @@ function tegnVarer() {
   const beholder = el('varer');
   beholder.replaceChildren();
 
+  // En vare må høre til en kategori. Uten kategorier fører "Ny vare" bare til
+  // en dialog man ikke kan lagre, så da sier vi hva som må gjøres først.
+  const manglerKategorier = data.alle_kategorier.length === 0;
+  el('ny-vare').disabled = manglerKategorier;
+
   const alleVarer = data.kategorier.flatMap((k) =>
     k.varer.map((v) => ({ ...v, kategori_navn: k.navn })),
   );
+
+  if (manglerKategorier) {
+    beholder.append(
+      lag('div', { klasse: 'melding melding--info' }, [
+        lag('strong', { tekst: 'Lag en kategori først.' }),
+        lag('div', {
+          tekst:
+            'Varer må ligge i en kategori – for eksempel «Baguetter», «Varmmat» ' +
+            'eller «Drikke». Legg til den første nederst på siden, så kan du ' +
+            'begynne å fylle inn varer.',
+        }),
+      ]),
+    );
+    return;
+  }
 
   if (alleVarer.length === 0) {
     beholder.append(lag('div', { klasse: 'hjelpetekst', tekst: 'Ingen varer ennå.' }));
@@ -111,6 +131,13 @@ function tegnVarer() {
 }
 
 function aapneVareDialog(vare, kategoriId) {
+  // Skal ikke kunne skje - knappen er slått av - men uten kategori er dialogen
+  // en blindvei, så vi stopper den her også.
+  if (data.alle_kategorier.length === 0) {
+    visFeil('feilmelding', 'Lag en kategori før du legger inn varer.');
+    return;
+  }
+
   redigererVareId = vare?.id ?? null;
 
   el('dialog-tittel').textContent = vare ? 'Endre vare' : 'Ny vare';
@@ -241,7 +268,7 @@ async function tegnRapport() {
     ['Utestående', kr(rapport.utestaaende_ore)],
   ];
 
-  el('rapport').replaceChildren(
+  fyll(el('rapport'),
     ...rader.map(([navn, verdi]) =>
       lag('div', { klasse: 'tabellsum' }, [
         lag('span', { tekst: navn }),
@@ -267,7 +294,7 @@ async function tegnRapport() {
 function tegnBetalingsinfo() {
   const erManuell = data.betalingsmetode !== 'vipps_epayment';
 
-  el('betalingsinfo').replaceChildren(
+  fyll(el('betalingsinfo'),
     lag('div', { klasse: 'tabellsum' }, [
       lag('span', { tekst: 'Metode' }),
       lag('strong', {
