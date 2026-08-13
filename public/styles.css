@@ -243,6 +243,8 @@ a {
   touch-action: manipulation;
   background: var(--aksent);
   color: var(--aksent-tekst);
+  /* Noen av knappene er <a>, og skal ikke se ut som lenker. */
+  text-decoration: none;
 }
 
 .knapp:disabled {
@@ -264,6 +266,16 @@ a {
 
 .knapp--bred {
   width: 100%;
+}
+
+/* Vipps sin egen oransje, så knappen kjennes igjen som en betalingsknapp.
+   Fargen er lys nok til at hvit tekst så vidt holder kontrastkravet, så den
+   brukes bevisst bare på denne ene knappen. */
+.knapp--vipps {
+  background: #ff5b24;
+  color: #ffffff;
+  font-size: 1.05rem;
+  padding: 15px 18px;
 }
 
 /* ---------------------------------------------------------------- handlekurv-linje */
@@ -369,6 +381,40 @@ textarea:focus-visible,
 .merke--grau {
   background: var(--flate-2);
   color: var(--tekst-svak);
+}
+
+/* ---------------------------------------------------------------- referanse */
+
+.referanse {
+  background: var(--flate-2);
+  border: 1px dashed var(--kant);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.referanse__merkelapp {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tekst-svak);
+  margin-bottom: 6px;
+}
+
+.referanse__rad {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.referanse__tekst {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 600;
+  /* Referansen må kunne merkes med fingeren om kopiknappen svikter. */
+  user-select: all;
+  overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------- meldinger */

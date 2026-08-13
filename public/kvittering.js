@@ -11,6 +11,40 @@ const STATUSTEKST = {
   avbrutt: ['Avbrutt', 'merke--rod'],
 };
 
+/**
+ * Kopierer referansen til utklippstavla og bekrefter det på knappen.
+ * navigator.clipboard finnes bare på https, så det er en reserveløsning for
+ * de tilfellene der den mangler.
+ */
+async function kopier(tekst, knapp) {
+  const opprinneligTekst = knapp.textContent;
+
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(tekst);
+    } else {
+      const felt = document.createElement('textarea');
+      felt.value = tekst;
+      felt.setAttribute('readonly', '');
+      felt.style.position = 'fixed';
+      felt.style.opacity = '0';
+      document.body.append(felt);
+      felt.select();
+      document.execCommand('copy');
+      felt.remove();
+    }
+    knapp.textContent = 'Kopiert';
+  } catch {
+    // Klarte vi ikke å kopiere, må eleven skrive den av. Referansen står
+    // synlig ved siden av, så det er ingen blindvei.
+    knapp.textContent = 'Skriv den av';
+  }
+
+  setTimeout(() => {
+    knapp.textContent = opprinneligTekst;
+  }, 2000);
+}
+
 function tegnBetaling(ordre, betaling) {
   const innhold = el('betaling-innhold');
   innhold.replaceChildren();
@@ -40,24 +74,51 @@ function tegnBetaling(ordre, betaling) {
     innhold.append(
       lag('div', { klasse: 'stablet' }, [
         lag('div', { klasse: 'tabellsum' }, [
-          lag('span', { tekst: 'Vippsnummer' }),
-          lag('strong', { tekst: betaling.vippsnummer }),
+          lag('span', { tekst: 'Send til' }),
+          lag('strong', {
+            tekst: betaling.mottaker_navn
+              ? `${betaling.mottaker_navn} · ${betaling.vippsnummer}`
+              : betaling.vippsnummer,
+          }),
         ]),
         lag('div', { klasse: 'tabellsum' }, [
           lag('span', { tekst: 'Beløp' }),
           lag('strong', { tekst: betaling.belop_tekst }),
         ]),
-        lag('div', { klasse: 'tabellsum' }, [
-          lag('span', { tekst: 'Melding' }),
-          lag('strong', { tekst: betaling.melding }),
-        ]),
-        lag('div', {
-          klasse: 'hjelpetekst mellomrom',
-          tekst:
-            'Åpne Vipps, søk opp nummeret eller skann QR-koden ved luka, ' +
-            'og skriv meldingen over så vi finner bestillingen din.',
-        }),
       ]),
+
+      // Referansen er det viktigste feltet - uten den vet ikke kjøkkenet
+      // hvilken bestilling pengene hører til. Derfor får den egen boks med
+      // kopiknapp i stedet for å stå som en linje i lista.
+      lag('div', { klasse: 'referanse mellomrom' }, [
+        lag('div', { klasse: 'referanse__merkelapp', tekst: 'Skriv dette i meldingsfeltet' }),
+        lag('div', { klasse: 'referanse__rad' }, [
+          lag('code', { klasse: 'referanse__tekst', tekst: betaling.referanse }),
+          lag('button', {
+            klasse: 'knapp knapp--liten',
+            type: 'button',
+            tekst: 'Kopier',
+            onclick: (e) => kopier(betaling.referanse, e.currentTarget),
+          }),
+        ]),
+      ]),
+
+      betaling.vipps_lenke
+        ? lag('a', {
+            klasse: 'knapp knapp--vipps knapp--bred mellomrom',
+            href: betaling.vipps_lenke,
+            tekst: `Betal ${betaling.belop_tekst} med Vipps`,
+          })
+        : null,
+
+      lag('div', {
+        klasse: 'hjelpetekst mellomrom',
+        tekst: betaling.vipps_lenke
+          ? `Vipps åpnes med ${betaling.vippsnummer}` +
+            `${betaling.mottaker_navn ? ` (${betaling.mottaker_navn})` : ''} ferdig utfylt. ` +
+            `Legg inn ${betaling.belop_tekst} som beløp, og lim inn meldingen over.`
+          : 'Åpne Vipps, søk opp nummeret eller skann QR-koden ved luka, og lim inn meldingen over.',
+      }),
     );
     return;
   }

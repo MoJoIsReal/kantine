@@ -31,6 +31,20 @@
     // Brukes kun når BETALINGSMETODE = "vipps_qr". Vippsnummeret elevene betaler til.
     "VIPPSNUMMER": "",
 
+    // Valgfritt: navnet som vises ved siden av nummeret, så elevene ser at de
+    // sender til riktig mottaker. F.eks. "Kantina" eller "Ola Nordmann".
+    "VIPPS_MOTTAKER_NAVN": "",
+
+    // Teksten eleven limer inn i meldingsfeltet i Vipps. Hentenummeret legges
+    // til bakerst, så dette gir "KANTINE Ordre: 42".
+    "BETALINGSREFERANSE": "KANTINE Ordre:",
+
+    // Valgfritt: adressen kantinas egen Vipps-QR peker til. Settes den, får
+    // elevene en "Betal med Vipps"-knapp i stedet for bare et nummer.
+    // Se docs/BETALING.md for hvordan dere finner den - og les avsnittet om
+    // hvorfor den ikke kan fylle ut beløpet.
+    "VIPPS_LENKE": "",
+
     // Brukes kun når BETALINGSMETODE = "vipps_epayment".
     // "test" mot Vipps sitt testmiljo (MT), "produksjon" mot ekte penger.
     "VIPPS_MILJO": "test"

@@ -81,9 +81,15 @@ I `wrangler.jsonc`:
 "vars": {
   "KANTINE_NAVN": "Kantina på Bjørnsletta",
   "BETALINGSMETODE": "vipps_qr",
-  "VIPPSNUMMER": "123456"
+  "VIPPSNUMMER": "93936700",
+  "VIPPS_MOTTAKER_NAVN": "Kantina",
+  "BETALINGSREFERANSE": "KANTINE Ordre:"
 }
 ```
+
+Er `VIPPSNUMMER` et vanlig mobilnummer, får elevene en «Betal med Vipps»-knapp
+som åpner appen med mottakeren ferdig utfylt. Beløpet må de taste selv – det
+kan ikke forhåndsutfylles. Se [docs/BETALING.md](docs/BETALING.md).
 
 ### 4. Publiser
 

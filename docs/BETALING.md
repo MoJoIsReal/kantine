@@ -61,6 +61,52 @@ på plass.
 uproblematisk – den som står i luka har Vipps-appen åpen uansett, og ser
 innbetalingene komme inn med hentenummeret i meldingsfeltet.
 
+## «Betal med Vipps»-knappen
+
+Kvitteringssiden viser en knapp som åpner Vipps med mottakeren ferdig utfylt,
+og referansen i en egen boks med kopiknapp.
+
+Knappen bruker Vipps sitt personlige QR-format, som inneholder telefonnummeret
+i klartekst:
+
+```
+https://qr.vipps.no/28/2/01/031/4793936700?v=1
+```
+
+Lenken lages automatisk fra `VIPPSNUMMER` – dere trenger ikke sette den opp
+selv. Vil dere overstyre med en adresse fra Vippsportalen, finnes `VIPPS_LENKE`.
+
+**Beløpet kan ikke fylles ut på forhånd.** Det finnes ingen støttet måte å
+legge beløp inn i en slik lenke; `vipps://` er kun app-veksling for betalinger
+som allerede er opprettet gjennom ePayment-API-et. Eleven må derfor taste
+beløpet selv, og siden sier tydelig ifra om det. Vil dere ha beløpet ferdig
+utfylt, er ePayment-API-et eneste vei – med gebyret og aldersgrensen det
+innebærer.
+
+To forbehold verdt å kjenne til:
+
+- **Knappen krever et vanlig mobilnummer.** Et Vippsnummer for bedrifter er
+  5–6 siffer og har ikke denne lenkeformen. Bruker dere et bedriftsnummer,
+  faller siden pent tilbake til å vise nummeret uten knapp. Det er en reell
+  avveining: bedriftsnummer er ryddigst for en skolekantine, men gir ingen
+  knapp. Et privat mobilnummer gir knappen, men da går kantinepengene innom en
+  privatpersons konto – noe skolen bør ta stilling til.
+- **Vipps har varslet at de går over til QR-koder med token** i stedet for
+  telefonnummer i klartekst. Skjer det, slutter lenken å virke, og da må dere
+  over på ePayment-API-et. Referansen og nummeret på siden fungerer uansett.
+
+### Referansen elevene limer inn
+
+Meldingsfeltet er det eneste som knytter innbetalingen til bestillingen, så
+den har fått egen boks med kopiknapp:
+
+```
+KANTINE Ordre: 42
+```
+
+Prefikset settes med `BETALINGSREFERANSE` i `wrangler.jsonc`. Hentenummeret
+legges på automatisk.
+
 ### Praktiske råd for den manuelle varianten
 
 - Skriv ut kantinas Vipps-QR fra Vippsportalen og heng den ved luka. Da slipper
